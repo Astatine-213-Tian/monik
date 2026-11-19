@@ -4,20 +4,22 @@ import Testing
 @Suite @MainActor
 struct UpdateCheckerTests {
     private func withChecker(
-        tag: String = "v0.1.3", status: Int = 200, draft: Bool = false, prerelease: Bool = false,
-        responseBody: String? = nil, failure: URLError? = nil,
-        onFetch: @escaping @Sendable () -> Void = {},
+        tag: String = "v0.1.3", status: Int = 200, destination: String? = nil,
+        failure: URLError? = nil, onFetch: @escaping @Sendable () -> Void = {},
         body: @MainActor (UpdateChecker, UserDefaults) async -> Void
     ) async {
         let suite = "com.monik.update-tests.\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
-        let payload = Data((responseBody ?? "{\"tag_name\":\"\(tag)\",\"draft\":\(draft),\"prerelease\":\(prerelease)}").utf8)
+        let resolvedURL = URL(string: destination ?? "https://github.com/Astatine-213-Tian/monik/releases/tag/\(tag)")!
         let checker = UpdateChecker(installedVersion: "0.1.2", defaults: defaults) { request in
-            #expect(request.url?.absoluteString == "https://api.github.com/repos/Astatine-213-Tian/monik/releases/latest")
+            #expect(request.url?.absoluteString == "https://github.com/Astatine-213-Tian/monik/releases/latest")
+            #expect(request.httpMethod == "HEAD")
+            #expect(request.value(forHTTPHeaderField: "Authorization") == nil)
+            #expect(request.cachePolicy == .reloadIgnoringLocalCacheData)
             onFetch()
             if let failure { throw failure }
-            return (payload, HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!)
+            return (Data(), HTTPURLResponse(url: resolvedURL, statusCode: status, httpVersion: nil, headerFields: nil)!)
         }
         await body(checker, defaults)
         checker.setAutomaticChecksEnabled(false)
@@ -34,7 +36,7 @@ struct UpdateCheckerTests {
         #expect(ReleaseVersion(value) == nil)
     }
 
-    @Test func offersNewerStableRelease() async {
+    @Test func readsVersionFromPublicLatestReleaseRedirect() async {
         await withChecker { checker, _ in
             await checker.checkForUpdates()
             #expect(checker.state == .available)
@@ -61,27 +63,16 @@ struct UpdateCheckerTests {
         }
     }
 
-    @Test func ignoresDraftAndPrereleaseBuilds() async {
-        for (draft, prerelease) in [(true, false), (false, true)] {
-            await withChecker(draft: draft, prerelease: prerelease) { checker, _ in
-                await checker.checkForUpdates()
-                #expect(checker.state == .failed)
-                #expect(checker.availableRelease == nil)
-            }
-        }
-    }
-
-    @Test func rejectsMalformedReleaseTags() async {
-        await withChecker(tag: "not-a-version") { checker, _ in
-            await checker.checkForUpdates()
-            #expect(checker.state == .failed)
-            #expect(checker.availableRelease == nil)
-        }
-    }
-
-    @Test(arguments: ["not JSON", "{}", "[]"])
-    func handlesMalformedResponses(_ payload: String) async {
-        await withChecker(responseBody: payload) { checker, _ in
+    @Test(arguments: [
+        "http://github.com/Astatine-213-Tian/monik/releases/tag/v9.0.0",
+        "https://example.com/Astatine-213-Tian/monik/releases/tag/v9.0.0",
+        "https://github.com/someone/else/releases/tag/v9.0.0",
+        "https://github.com/Astatine-213-Tian/monik/releases/latest",
+        "https://github.com/Astatine-213-Tian/monik/releases/tag/v9.0.0-beta",
+        "https://github.com/Astatine-213-Tian/monik/releases/tag/not-a-version"
+    ])
+    func rejectsInvalidReleaseDestinations(_ destination: String) async {
+        await withChecker(destination: destination) { checker, _ in
             await checker.checkForUpdates()
             #expect(checker.state == .failed)
             #expect(checker.availableRelease == nil)

@@ -105,19 +105,22 @@ final class UpdateChecker {
         let previousState = state
         state = .checking
         defaults.set(Date(), forKey: Self.lastAttemptKey)
-        var request = URLRequest(url: URL(string: "https://api.github.com/repos/Astatine-213-Tian/monik/releases/latest")!)
+        var request = URLRequest(url: URL(string: "https://github.com/Astatine-213-Tian/monik/releases/latest")!)
+        request.httpMethod = "HEAD"
+        request.cachePolicy = .reloadIgnoringLocalCacheData
         request.timeoutInterval = 20
-        request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-        request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
         request.setValue("Monik/\(installedVersion)", forHTTPHeaderField: "User-Agent")
         do {
-            let (data, response) = try await fetch(request)
+            let (_, response) = try await fetch(request)
             try Task.checkCancellation()
-            guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+            // URLSession follows /latest to the newest published stable release.
+            guard let response = response as? HTTPURLResponse, response.statusCode == 200,
+                  let url = response.url, url.scheme == "https", url.host == "github.com",
+                  url.deletingLastPathComponent().path == "/Astatine-213-Tian/monik/releases/tag" else {
                 state = .failed
                 return
             }
-            let release = try JSONDecoder().decode(Release.self, from: data)
+            let release = Release(tagName: url.lastPathComponent, draft: false, prerelease: false)
             guard let latest = release.stableVersion,
                   let current = ReleaseVersion(installedVersion) else {
                 state = .failed
