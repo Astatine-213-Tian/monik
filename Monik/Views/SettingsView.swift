@@ -259,12 +259,16 @@ private struct SunSettings: View {
 // MARK: - General
 
 struct GeneralSettings: View {
+    @Environment(AppModel.self) private var model
     @State private var launchAtLogin = LoginItem.isEnabled
     @State private var loginItemError: String?
 
     var body: some View {
+        @Bindable var model = model
+
         Form {
             Section {
+                LabeledContent("Version", value: UpdateChecker.currentVersion)
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         loginItemError = LoginItem.setEnabled(enabled)
@@ -275,6 +279,35 @@ struct GeneralSettings: View {
                         .font(.callout)
                         .foregroundStyle(.red)
                 }
+            }
+
+            Section {
+                Toggle("Automatically check for updates", isOn: $model.prefs.automaticallyCheckForUpdates)
+                HStack {
+                    Button("Check for Updates") {
+                        Task { await model.updates.checkForUpdates() }
+                    }
+                    .disabled(model.updates.isChecking)
+                    Spacer()
+                    if model.updates.isChecking {
+                        ProgressView().controlSize(.small)
+                    }
+                }
+                if let release = model.updates.availableRelease {
+                    LabeledContent("Monik \(release.versionLabel) is available") {
+                        Link("Download", destination: release.downloadURL)
+                    }
+                } else if model.updates.state == .upToDate {
+                    Text("You’re up to date.").foregroundStyle(.secondary)
+                }
+                if model.updates.state == .failed {
+                    Text("Couldn’t check for updates. Try again later.")
+                        .foregroundStyle(.secondary)
+                }
+            } header: {
+                Text("Updates")
+            } footer: {
+                Text("When enabled, Monik checks GitHub once a day. Updates are downloaded manually.")
             }
         }
         .formStyle(.grouped)

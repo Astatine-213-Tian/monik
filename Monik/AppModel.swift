@@ -18,6 +18,9 @@ final class AppModel {
         didSet {
             guard prefs != oldValue else { return }
             prefs.save()
+            if isRunning, prefs.automaticallyCheckForUpdates != oldValue.automaticallyCheckForUpdates {
+                updates.setAutomaticChecksEnabled(prefs.automaticallyCheckForUpdates)
+            }
             refresh()
         }
     }
@@ -31,6 +34,7 @@ final class AppModel {
     private(set) var conflictingApp: NSRunningApplication?
 
     let location = LocationService()
+    let updates = UpdateChecker()
 
     @ObservationIgnored private let gamma = GammaController()
     @ObservationIgnored private var previewKelvin: Double?
@@ -85,6 +89,7 @@ final class AppModel {
         guard !isRunning else { return }
         isRunning = true
         observeSystem()
+        updates.setAutomaticChecksEnabled(prefs.automaticallyCheckForUpdates)
 
         let heartbeat = Timer(timeInterval: 2, repeats: true) { [weak self] _ in
             MainActor.assumeIsolated { self?.refresh() }
@@ -103,6 +108,7 @@ final class AppModel {
         isRunning = false
         heartbeat?.invalidate()
         fadeTimer?.invalidate()
+        updates.setAutomaticChecksEnabled(false)
         gamma.reset()
     }
 

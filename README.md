@@ -13,7 +13,8 @@ Monik is a free, open source menu bar app for macOS that warms the color tempera
 - **Every display.** All connected monitors get the same color, and keep it across Spaces, sleep and display changes.
 - **Out of the way when color matters.** Monik pauses while a full-screen app is in front, and while any app you list (a photo editor, a video player) is in front.
 - **One switch.** Turn it off and on from the dropdown.
-- **Private.** Your location is read once, when you press the location button, or not at all if you type a city instead. There is no analytics and no network use beyond Apple's place lookup.
+- **Private.** Your location is read once, when you press the location button, or not at all if you type a city instead. There is no analytics. Network use is limited to Apple's place lookup and GitHub release checks, which you can turn off in General.
+- **Update checks.** General shows the installed version and lets you check for a newer release. Automatic checks are enabled by default and run at most once a day; a toggle turns them off. Updates are downloaded and installed manually.
 
 ## Requirements
 

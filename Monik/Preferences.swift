@@ -37,6 +37,7 @@ nonisolated struct Preferences: Codable, Equatable, Sendable {
     var locationName: String?
     var disableForFullScreen = true
     var exceptionApps: [AppIdentity] = []
+    var automaticallyCheckForUpdates = true
 
     init() {}
 
@@ -55,6 +56,7 @@ nonisolated struct Preferences: Codable, Equatable, Sendable {
         locationName = try values.decodeIfPresent(String.self, forKey: .locationName)
         disableForFullScreen = try values.decodeIfPresent(Bool.self, forKey: .disableForFullScreen) ?? defaults.disableForFullScreen
         exceptionApps = try values.decodeIfPresent([AppIdentity].self, forKey: .exceptionApps) ?? defaults.exceptionApps
+        automaticallyCheckForUpdates = try values.decodeIfPresent(Bool.self, forKey: .automaticallyCheckForUpdates) ?? defaults.automaticallyCheckForUpdates
     }
 
     subscript(phase: Phase) -> Double {

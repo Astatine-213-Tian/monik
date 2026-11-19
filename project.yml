@@ -8,8 +8,8 @@ settings:
     SWIFT_VERSION: "6.0"
     SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
     SWIFT_APPROACHABLE_CONCURRENCY: YES
-    MARKETING_VERSION: "0.1.2"
-    CURRENT_PROJECT_VERSION: "3"
+    MARKETING_VERSION: "0.1.3"
+    CURRENT_PROJECT_VERSION: "4"
     DEAD_CODE_STRIPPING: YES
 targets:
   Monik:
@@ -46,6 +46,7 @@ targets:
     sources:
       - path: MonikTests
       - path: Monik/Core
+      - path: Monik/System/UpdateChecker.swift
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES

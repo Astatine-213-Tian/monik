@@ -36,6 +36,12 @@ struct MenuPopover: View {
 
             PanelDivider()
             VStack(spacing: 0) {
+                if let release = model.updates.availableRelease {
+                    Button("Monik \(release.versionLabel) Available…") {
+                        NSWorkspace.shared.open(release.downloadURL)
+                    }
+                    .buttonStyle(PanelRowButtonStyle())
+                }
                 PanelCommand(title: "Settings…", shortcut: ",") {
                     openSettings.bringToFront()
                 }
