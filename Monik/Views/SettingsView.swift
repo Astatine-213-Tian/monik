@@ -5,12 +5,15 @@ struct SettingsView: View {
         TabView {
             Tab("Schedule", systemImage: "sun.horizon") {
                 ScheduleSettings()
+                    .frame(maxHeight: .infinity, alignment: .top)
             }
             Tab("Exceptions", systemImage: "pause.circle") {
                 ExceptionsSettings()
+                    .frame(maxHeight: .infinity, alignment: .top)
             }
             Tab("General", systemImage: "gearshape") {
                 GeneralSettings()
+                    .frame(maxHeight: .infinity, alignment: .top)
             }
         }
         .frame(width: 500)
