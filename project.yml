@@ -46,6 +46,7 @@ targets:
     sources:
       - path: MonikTests
       - path: Monik/Core
+      - path: Monik/System/SpaceInspector.swift
       - path: Monik/System/UpdateChecker.swift
     settings:
       base:

@@ -61,9 +61,21 @@ enum SpaceInspector {
                 .map(CGDisplayBounds)
         }
         return WindowList.onScreen().contains { window in
-            window.owner == app.processIdentifier && window.layer > 0 && window.alpha > 0.9
-                && displays.contains(window.bounds)
+            window.owner == app.processIdentifier && window.coversDisplay(among: displays)
         }
+    }
+}
+
+extension WindowList.Window {
+    /// The level of the invisible overlay macOS stretches over a display to
+    /// carry the items of a drag. It belongs to the app the drag started in.
+    private static let dragLayer = Int(CGWindowLevelForKey(.draggingWindow))
+
+    /// Whether this window takes over one of `displays`: above the normal
+    /// level, opaque and exactly its size. A drag's overlay has that shape
+    /// too, but it is not something the app is showing, so it doesn't count.
+    func coversDisplay(among displays: [CGRect]) -> Bool {
+        layer > 0 && layer != Self.dragLayer && alpha > 0.9 && displays.contains(bounds)
     }
 }
 
