@@ -298,18 +298,15 @@ struct GeneralSettings: View {
                     LabeledContent("Monik \(release.versionLabel) is available") {
                         Link("Download", destination: release.downloadURL)
                     }
-                } else if model.updates.state == .upToDate {
-                    Text("You’re up to date.").foregroundStyle(.secondary)
-                }
-                if model.updates.state == .failed {
-                    Text("Couldn’t check for updates. Try again later.")
-                        .foregroundStyle(.secondary)
                 }
             } header: {
                 Text("Updates")
             } footer: {
-                Text("Checks GitHub daily when enabled. Updates are downloaded manually.")
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if model.updates.state == .failed {
+                    Text("Couldn’t check for updates. Try again later.")
+                } else if model.updates.state == .upToDate {
+                    Text("You’re up to date.")
+                }
             }
         }
         .formStyle(.grouped)
