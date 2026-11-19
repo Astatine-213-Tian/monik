@@ -21,7 +21,7 @@ macOS 15 or later. So far Monik has only been run on macOS 27.
 
 ## Install
 
-1. Download `Monik-x.y.z.zip` from the [latest release](https://github.com/Astatine-213-Tian/monik/releases/latest), unzip it and move Monik to your Applications folder.
+1. Download `Monik-x.y.z.dmg` from the [latest release](https://github.com/Astatine-213-Tian/monik/releases/latest), open it and drag Monik to Applications. Alternatively, download the ZIP, unzip it and move Monik to your Applications folder.
 2. Open Monik. It is not notarized by Apple, so macOS blocks the first launch. Open System Settings › Privacy & Security, scroll down to the message about Monik and click **Open Anyway**. You only do this once.
 
 If you are comfortable in Terminal, removing the download flag does the same thing:

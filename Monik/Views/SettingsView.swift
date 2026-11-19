@@ -66,11 +66,13 @@ struct ScheduleSettings: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// A plain time field: click the hour or the minute, then type or use the
-    /// arrow keys. The stepper variant is avoided because the system draws a
-    /// hairline between its two arrows whenever the pointer is over it.
+    /// A plain time field: click a component, then type or use the arrow keys.
     private func timeField(_ kind: Timeline.Event.Kind, _ keyPath: WritableKeyPath<Preferences, Int>) -> some View {
-        DatePicker(selection: time(keyPath), displayedComponents: .hourAndMinute) {
+        LabeledContent {
+            TimeField(selection: time(keyPath))
+                .fixedSize()
+                .accessibilityLabel(kind.title)
+        } label: {
             Label {
                 Text(kind.title)
             } icon: {
@@ -79,7 +81,6 @@ struct ScheduleSettings: View {
                     .frame(width: 22)
             }
         }
-        .datePickerStyle(.field)
     }
 
     private func date(for minutes: Int) -> Date {
