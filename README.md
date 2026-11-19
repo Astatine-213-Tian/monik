@@ -21,7 +21,20 @@ macOS 15 or later. So far Monik has only been run on macOS 27.
 
 ## Install
 
-There is no prebuilt download yet, so build it from source. You need Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+1. Download `Monik-x.y.z.zip` from the [latest release](https://github.com/Astatine-213-Tian/monik/releases/latest), unzip it and move Monik to your Applications folder.
+2. Open Monik. It is not notarized by Apple, so macOS blocks the first launch. Open System Settings › Privacy & Security, scroll down to the message about Monik and click **Open Anyway**. You only do this once.
+
+If you are comfortable in Terminal, removing the download flag does the same thing:
+
+```sh
+xattr -dr com.apple.quarantine /Applications/Monik.app
+```
+
+Quit f.lux and turn off Night Shift first: two apps changing the screen color at once fight each other. Monik warns you in its dropdown if f.lux is running.
+
+### Build from source
+
+You need Xcode and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
 
 ```sh
 brew install xcodegen
@@ -32,8 +45,6 @@ xcodebuild -project Monik.xcodeproj -scheme Monik -configuration Release -derive
 ditto build/Build/Products/Release/Monik.app /Applications/Monik.app
 open /Applications/Monik.app
 ```
-
-Quit f.lux and turn off Night Shift first: two apps changing the screen color at once fight each other. Monik warns you in its dropdown if f.lux is running.
 
 ## How it works
 
@@ -51,7 +62,8 @@ Quit f.lux and turn off Night Shift first: two apps changing the screen color at
 
 - Multiple displays are handled in code but have so far been tested with only a built-in display connected. Reports are welcome.
 - Launch at login has not been tested yet.
-- The app is not notarized, which is why there is no download.
+- The app is not notarized, so macOS asks you to approve its first launch.
+- The download is a universal build, but the Intel half has not been run.
 
 ## License
 
