@@ -2,7 +2,7 @@ import Foundation
 import Observation
 
 nonisolated struct ReleaseVersion: Comparable, Sendable {
-    let components: [Int]
+    private let components: [Int]
 
     init?(_ value: String) {
         let value = value.hasPrefix("v") ? String(value.dropFirst()) : value
@@ -22,14 +22,23 @@ nonisolated struct ReleaseVersion: Comparable, Sendable {
 /// Checks for a stable GitHub release; downloading and installation stay manual.
 @MainActor @Observable
 final class UpdateChecker {
-    nonisolated struct Release: Decodable, Sendable {
-        let tag_name: String
+    nonisolated struct Release: Codable, Sendable {
+        let tagName: String
         let draft: Bool
         let prerelease: Bool
 
-        var versionLabel: String { tag_name.hasPrefix("v") ? String(tag_name.dropFirst()) : tag_name }
+        private enum CodingKeys: String, CodingKey {
+            case tagName = "tag_name", draft, prerelease
+        }
+
+        var stableVersion: ReleaseVersion? {
+            guard !draft, !prerelease else { return nil }
+            return ReleaseVersion(tagName)
+        }
+
+        var versionLabel: String { tagName.hasPrefix("v") ? String(tagName.dropFirst()) : tagName }
         var downloadURL: URL {
-            URL(string: "https://github.com/Astatine-213-Tian/monik/releases/tag/\(tag_name)")!
+            URL(string: "https://github.com/Astatine-213-Tian/monik/releases/tag/\(tagName)")!
         }
     }
 
@@ -41,7 +50,6 @@ final class UpdateChecker {
 
     private(set) var state = State.idle
     private(set) var availableRelease: Release?
-    private(set) var lastChecked: Date?
 
     var isChecking: Bool { state == .checking }
 
@@ -50,7 +58,7 @@ final class UpdateChecker {
     @ObservationIgnored private let fetch: @Sendable (URLRequest) async throws -> (Data, URLResponse)
     @ObservationIgnored private var automaticTask: Task<Void, Never>?
     private static let lastAttemptKey = "lastUpdateCheckAttempt"
-    private static let lastSuccessKey = "lastSuccessfulUpdateCheck"
+    private static let cachedReleaseKey = "latestCheckedRelease"
 
     init(
         installedVersion: String = UpdateChecker.currentVersion,
@@ -62,7 +70,13 @@ final class UpdateChecker {
         self.installedVersion = installedVersion
         self.defaults = defaults
         self.fetch = fetch
-        lastChecked = defaults.object(forKey: Self.lastSuccessKey) as? Date
+        if let data = defaults.data(forKey: Self.cachedReleaseKey),
+           let release = try? JSONDecoder().decode(Release.self, from: data),
+           let latest = release.stableVersion,
+           let current = ReleaseVersion(installedVersion), latest > current {
+            availableRelease = release
+            state = .available
+        }
     }
 
     func setAutomaticChecksEnabled(_ enabled: Bool) {
@@ -70,7 +84,7 @@ final class UpdateChecker {
         automaticTask = nil
         guard enabled else { return }
         automaticTask = Task { [weak self] in
-            while !Task.isCancelled {
+            while !Task.isCancelled, self != nil {
                 if self?.isAutomaticCheckDue() == true {
                     await self?.checkForUpdates()
                 }
@@ -104,17 +118,14 @@ final class UpdateChecker {
                 return
             }
             let release = try JSONDecoder().decode(Release.self, from: data)
-            guard !release.draft, !release.prerelease,
-                  let latest = ReleaseVersion(release.tag_name),
+            guard let latest = release.stableVersion,
                   let current = ReleaseVersion(installedVersion) else {
                 state = .failed
                 return
             }
             availableRelease = latest > current ? release : nil
             state = availableRelease == nil ? .upToDate : .available
-            let now = Date()
-            lastChecked = now
-            defaults.set(now, forKey: Self.lastSuccessKey)
+            defaults.set(try JSONEncoder().encode(release), forKey: Self.cachedReleaseKey)
         } catch {
             state = Task.isCancelled ? previousState : .failed
         }

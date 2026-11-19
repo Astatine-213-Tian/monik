@@ -40,7 +40,6 @@ struct UpdateCheckerTests {
             #expect(checker.state == .available)
             #expect(checker.availableRelease?.versionLabel == "0.1.3")
             #expect(checker.availableRelease?.downloadURL.absoluteString == "https://github.com/Astatine-213-Tian/monik/releases/tag/v0.1.3")
-            #expect(checker.lastChecked != nil)
         }
     }
 
@@ -58,7 +57,6 @@ struct UpdateCheckerTests {
         await withChecker(status: status) { checker, _ in
             await checker.checkForUpdates()
             #expect(checker.state == .failed)
-            #expect(checker.lastChecked == nil)
             #expect(!checker.isAutomaticCheckDue())
         }
     }
@@ -95,7 +93,6 @@ struct UpdateCheckerTests {
             await checker.checkForUpdates()
             #expect(checker.state == .failed)
             #expect(!checker.isChecking)
-            #expect(checker.lastChecked == nil)
         }
     }
 
@@ -109,6 +106,10 @@ struct UpdateCheckerTests {
             #expect(checker.isAutomaticCheckDue(at: now.addingTimeInterval(24 * 3600)))
             let relaunched = UpdateChecker(installedVersion: "0.1.2", defaults: defaults)
             #expect(!relaunched.isAutomaticCheckDue())
+            #expect(relaunched.state == .available)
+            #expect(relaunched.availableRelease?.versionLabel == "0.1.3")
+            let updated = UpdateChecker(installedVersion: "0.1.3", defaults: defaults)
+            #expect(updated.availableRelease == nil)
             await checker.checkForUpdates()
             #expect(checker.state == .available)
         }
@@ -121,6 +122,20 @@ struct UpdateCheckerTests {
             await Task.yield()
             #expect(checker.state == .idle)
             #expect(checker.isAutomaticCheckDue())
+        }
+    }
+
+    @Test(arguments: [
+        "not JSON",
+        "{\"tag_name\":\"../../bad\",\"draft\":false,\"prerelease\":false}",
+        "{\"tag_name\":\"v9.0.0\",\"draft\":false,\"prerelease\":true}"
+    ])
+    func ignoresInvalidCachedReleases(_ payload: String) async {
+        await withChecker { _, defaults in
+            defaults.set(Data(payload.utf8), forKey: "latestCheckedRelease")
+            let checker = UpdateChecker(installedVersion: "0.1.2", defaults: defaults)
+            #expect(checker.availableRelease == nil)
+            #expect(checker.state == .idle)
         }
     }
 

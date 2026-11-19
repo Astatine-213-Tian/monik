@@ -268,7 +268,6 @@ struct GeneralSettings: View {
 
         Form {
             Section {
-                LabeledContent("Version", value: UpdateChecker.currentVersion)
                 Toggle("Launch at login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, enabled in
                         loginItemError = LoginItem.setEnabled(enabled)
@@ -284,14 +283,16 @@ struct GeneralSettings: View {
             Section {
                 Toggle("Automatically check for updates", isOn: $model.prefs.automaticallyCheckForUpdates)
                 HStack {
-                    Button("Check for Updates") {
-                        Task { await model.updates.checkForUpdates() }
-                    }
-                    .disabled(model.updates.isChecking)
+                    Text("Version \(UpdateChecker.currentVersion)")
+                        .foregroundStyle(.secondary)
                     Spacer()
                     if model.updates.isChecking {
                         ProgressView().controlSize(.small)
                     }
+                    Button("Check for Updates") {
+                        Task { await model.updates.checkForUpdates() }
+                    }
+                    .disabled(model.updates.isChecking)
                 }
                 if let release = model.updates.availableRelease {
                     LabeledContent("Monik \(release.versionLabel) is available") {
@@ -307,7 +308,8 @@ struct GeneralSettings: View {
             } header: {
                 Text("Updates")
             } footer: {
-                Text("When enabled, Monik checks GitHub once a day. Updates are downloaded manually.")
+                Text("Checks GitHub daily when enabled. Updates are downloaded manually.")
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .formStyle(.grouped)
